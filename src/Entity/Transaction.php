@@ -7,12 +7,10 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use App\Enum\TransactionType;
 use ApiPlatform\Metadata\ApiResource;
-
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: TransactionRepository::class)]
 #[ApiResource]
-
 #[ORM\Table(name: 'transactions')]
 class Transaction
 {
@@ -29,6 +27,7 @@ class Transaction
     private ?TransactionType $type = null; // Enum for debit or credit
 
     #[ORM\Column(type: Types::DECIMAL, precision: 15, scale: 2)]
+    #[Assert\Positive(message: 'The amount must be a positive number.')] // Add this constraint
     private ?string $amount = null;
 
     #[ORM\ManyToOne]

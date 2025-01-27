@@ -71,6 +71,91 @@ class TransactionControllerTest extends WebTestCase
     }
 
 
+    public function testCreateTransactionWithNegativeAmount(): void
+    {
+        // Set up a Ledger and Balance in the test database
+        $ledger = new Ledger();
+        $ledger->setName('Test Ledger');
+        $ledger->setCurrency('USD');
+        $this->entityManager->persist($ledger);
+
+        $balance = new Balance();
+        $balance->setLedger($ledger);
+        $balance->setCurrency('USD');
+        $balance->setBalance('100.00');
+        $this->entityManager->persist($balance);
+
+        $this->entityManager->flush();
+
+        // Test the POST /api/transactions API with a negative amount
+        $this->client->request('POST', '/api/transactions', [], [], [
+            'CONTENT_TYPE' => 'application/ld+json',
+        ], json_encode([
+            'ledger' => '/api/ledgers/' . $ledger->getId(), // Use IRI
+            'balance' => '/api/balances/' . $balance->getId(), // Use IRI
+            'type' => 'debit',
+            'amount' => '-50.00', // Negative amount
+            'transaction_id' => uniqid(),
+        ]));
+
+        $response = $this->client->getResponse();
+        $this->assertEquals(422, $response->getStatusCode()); // Expect a 422 Unprocessable Entity
+
+        // Decode the response and check the error message
+        $responseData = json_decode($response->getContent(), true);
+        $this->assertArrayHasKey('violations', $responseData); // Ensure the response contains validation errors
+
+        // Check the details of the first violation
+        $this->assertArrayHasKey(0, $responseData['violations']);
+    }
+
+    public function testCreateLedger(): void
+    {
+        // Send a POST request to create a ledger
+        $this->client->request('POST', '/api/ledgers', [], [], [
+            'CONTENT_TYPE' => 'application/ld+json',
+        ], json_encode([
+            'name' => 'Test Ledger', // Ledger name
+            'currency' => 'USD',    // Ledger currency
+        ]));
+
+        // Get the response
+        $response = $this->client->getResponse();
+
+        // Assert that the response status code is 201 (Created)
+        $this->assertEquals(201, $response->getStatusCode());
+
+        // Decode the response content
+        $responseData = json_decode($response->getContent(), true);
+
+        // Assert that the response contains the correct data
+        $this->assertArrayHasKey('id', $responseData); // Check that the ID is returned
+        $this->assertEquals('Test Ledger', $responseData['name']); // Check the name
+        $this->assertEquals('USD', $responseData['currency']); // Check the currency
+    }
+
+    public function testCreateTransactionWithInvalidJsonPayload(): void
+    {
+        // Send a malformed JSON payload to the POST /api/transactions endpoint
+        $this->client->request('POST', '/api/transactions', [], [], [
+            'CONTENT_TYPE' => 'application/ld+json',
+        ], '{ "ledger": "invalid-json"'); // Malformed JSON
+
+        // Get the response
+        $response = $this->client->getResponse();
+
+        // Assert that the response status code is 400 (Bad Request)
+        $this->assertEquals(400, $response->getStatusCode());
+
+        // Decode the response content
+        $responseData = json_decode($response->getContent(), true);
+
+        // Assert that the response contains the expected error structure
+        $this->assertArrayHasKey('detail', $responseData); // Ensure the 'detail' key exists
+        $this->assertStringContainsString('Syntax error', $responseData['detail']); // Verify the error message
+    }
+
+
     public function testGetBalances(): void
     {
         // Set up a Ledger and Balance in the test database
