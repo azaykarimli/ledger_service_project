@@ -6,13 +6,12 @@ use App\Repository\BalanceRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use ApiPlatform\Metadata\ApiResource;
-
 #[ORM\Entity(repositoryClass: BalanceRepository::class)]
 #[ORM\Table(name: 'balances', uniqueConstraints: [
     new ORM\UniqueConstraint(name: 'unique_ledger_currency', columns: ['ledger_id', 'currency'])
 ])]
 #[ApiResource]
-#[ORM\HasLifecycleCallbacks] // Add this line to enable lifecycle callbacks
+#[ORM\HasLifecycleCallbacks]
 class Balance
 {
     #[ORM\Id]
@@ -27,14 +26,14 @@ class Balance
     #[ORM\Column(length: 3)]
     private ?string $currency = null;
 
-    #[ORM\Column(type: Types::DECIMAL, precision: 15, scale: 2, options: ['default' => 0])]
-    private ?string $balance = '0.00';
+    // Ensure DECIMAL type with string for balance
+    #[ORM\Column(type: Types::DECIMAL, precision: 15, scale: 2, options: ['default' => '0.00'])]
+    private ?string $balance = '0.00'; // Keep balance as a string
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE, options: ['default' => 'CURRENT_TIMESTAMP'])]
     private ?\DateTimeInterface $updated_at = null;
 
-    // Add these lifecycle callback methods
-    #[ORM\PrePersist] // Called before the entity is persisted (inserted) for the first time
+    #[ORM\PrePersist]
     public function setUpdatedAtValue(): void
     {
         $this->updated_at = new \DateTime();
@@ -69,6 +68,7 @@ class Balance
         return $this;
     }
 
+    // Get and set the balance as a string, matching the database column type
     public function getBalance(): ?string
     {
         return $this->balance;
@@ -76,6 +76,8 @@ class Balance
 
     public function setBalance(string $balance): static
     {
+        // Ensure the balance is a valid string representation of a number
+        // You may want to validate or sanitize the value before assigning
         $this->balance = $balance;
 
         return $this;
