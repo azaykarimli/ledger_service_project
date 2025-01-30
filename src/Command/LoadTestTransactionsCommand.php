@@ -16,18 +16,20 @@ use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 class LoadTestTransactionsCommand extends Command
 {
     private HttpClientInterface $httpClient;
+    private string $apiBaseUrl;
 
     public function __construct(HttpClientInterface $httpClient)
     {
         $this->httpClient = $httpClient;
+        $this->apiBaseUrl = $_ENV['API_BASE_URL'] ?? 'http://localhost:8000'; // Default fallback
         parent::__construct();
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $endpoint = 'http://localhost:8000/api/transactions'; // Replace with your actual API endpoint
-        $ledgerEndpoint = 'http://localhost:8000/api/ledgers';
-        $balanceEndpoint = 'http://localhost:8000/api/balances';
+        $endpoint = "{$this->apiBaseUrl}/api/transactions";
+        $ledgerEndpoint = "{$this->apiBaseUrl}/api/ledgers";
+        $balanceEndpoint = "{$this->apiBaseUrl}/api/balances";
         $start = microtime(true);
         $totalRequests = 1000;
         $successfulRequests = 0;
@@ -123,19 +125,13 @@ class LoadTestTransactionsCommand extends Command
 
         // Cleanup: Delete the test ledger and balance
         $output->writeln("Cleaning up test resources...");
-        // Assuming your base URL is 'http://localhost:8000'
-        $baseUrl = 'http://localhost:8000'; // Update this if necessary
-
-        // Ensure the full URL is passed to the DELETE request
-        $balanceUrl = $baseUrl . $balanceData['@id']; // Full URL to delete the balance
 
         try {
             // Delete the balance
-            $this->httpClient->request('DELETE', $balanceUrl);
+            $this->httpClient->request('DELETE', "{$this->apiBaseUrl}{$balanceData['@id']}");
 
             // Delete the ledger
-            $ledgerUrl = $baseUrl . $ledgerData['@id']; // Full URL to delete the ledger
-            $this->httpClient->request('DELETE', $ledgerUrl);
+            $this->httpClient->request('DELETE', "{$this->apiBaseUrl}{$ledgerData['@id']}");
         } catch (TransportExceptionInterface $e) {
             $output->writeln("<error>Failed to clean up resources: {$e->getMessage()}</error>");
         }
