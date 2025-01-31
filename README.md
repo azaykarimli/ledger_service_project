@@ -236,7 +236,8 @@ Description: Tests the API endpoints for creating transactions, handling invalid
 Test Class: TransactionControllerTest
 
 
-Run the tests
+Run the tests inside the containers
+
 
  vendor/bin/phpunit tests/Stress/StressTest.php 
  vendor/bin/phpunit tests/Controller/TransactionControllerTest.php 

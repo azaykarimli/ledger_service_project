@@ -8,7 +8,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
-
+use Symfony\Component\HttpClient\HttpClient;
 #[AsCommand(
     name: 'app:load-test-transactions',
     description: 'Simulate 1,000 transactions per minute for load testing.',
@@ -85,7 +85,7 @@ class LoadTestTransactionsCommand extends Command
         $output->writeln("Starting load test for $totalRequests transactions...");
 
         // Send requests as fast as possible
-        for ($i = 1; $i <= $totalRequests; $i++) {
+        /*     for ($i = 1; $i <= $totalRequests; $i++) {
             $elapsedTime = microtime(true) - $start;
 
             // Stop if the time limit is exceeded
@@ -117,6 +117,34 @@ class LoadTestTransactionsCommand extends Command
                 }
             } catch (TransportExceptionInterface $e) {
                 $output->writeln("<error>Transaction $i failed: {$e->getMessage()}</error>");
+            }
+        } */
+
+
+        $httpClient = HttpClient::create();
+        $responses = [];
+
+        // Start all requests asynchronously
+        for ($i = 0; $i < 1000; $i++) {
+            $responses[] = $httpClient->request('POST', $endpoint, [
+                'headers' => ['Content-Type' => 'application/ld+json'],
+                'json' => [
+                    'ledger' => $ledgerData['@id'],
+                    'balance' => $balanceData['@id'],
+                    'type' => 'debit',
+                    'amount' => '10.00',
+                    'transaction_id' => uniqid(),
+                ],
+            ]);
+        }
+
+        // Wait for all responses to complete
+        foreach ($responses as $response) {
+            try {
+                $response->getStatusCode();
+                $successfulRequests++;
+            } catch (TransportExceptionInterface $e) {
+                // Log errors minimally
             }
         }
 
