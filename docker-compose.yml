@@ -12,6 +12,8 @@ services:
       - database
     environment:
       DATABASE_URL: "postgresql://app:password@database:5432/ledger_service?serverVersion=15&charset=utf8"
+      API_BASE_URL: "http://app"  # Internal Docker network communication
+
 
   database:
     image: postgres:${POSTGRES_VERSION:-16}-alpine

@@ -91,6 +91,8 @@ class LoadTestTransactionsCommand extends Command
             // Stop if the time limit is exceeded
             if ($elapsedTime > $maxDuration) {
                 $output->writeln("<error>Time limit exceeded. Load test took longer than {$maxDuration} seconds.</error>");
+                $output->writeln("$successfulRequests/$totalRequests transactions succeeded.");
+
                 return Command::FAILURE;
             }
 

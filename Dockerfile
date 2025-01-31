@@ -4,6 +4,7 @@ FROM php:8.3-cli
 # Set the working directory
 WORKDIR /var/www/html
 
+
 # Install dependencies
 RUN apt-get update && apt-get install -y \
     git \
@@ -11,7 +12,10 @@ RUN apt-get update && apt-get install -y \
     libpq-dev \
     libzip-dev \
     libicu-dev \
+    postgresql-client \
     && docker-php-ext-install pdo pdo_pgsql pdo_mysql zip intl
+
+
 
 # Ensure Git recognizes the working directory as safe
 RUN git config --global --add safe.directory /var/www/html
